@@ -116,9 +116,7 @@ CI_DATA = {
 	CI_SETTING = 2,
 	CI_RAZED_REGIONS = 0,
 	CI_LAST_EFFECT = "",
-	CI_AUTORUN = false,
-	CI_EARLY_TURNS = 0,
-	CI_EXTRA_ARMIES = 0
+	CI_AUTORUN = false
 };
 CI_ARMY_SETTINGS = {
 	{key = "Off", multiplier = 0},
@@ -166,7 +164,7 @@ function CI_setup()
 				CI_DATA.CI_SETTING = chaos_setting_value + 1;
 			else
 				out.chaos("Defaulting Multiplayer Chaos Setting");
-				CI_DATA.CI_SETTING = 2;
+				CI_DATA.CI_SETTING = 5;
 			end
 		end
 		out.chaos("Frontend Setting: "..tostring(CI_ARMY_SETTINGS[CI_DATA.CI_SETTING].key).." ("..tostring(CI_DATA.CI_SETTING)..")");
@@ -224,8 +222,6 @@ function CI_setup()
 			out.chaos("Disabling Chaos Invasion! (Off Setting)");
 			cm:complete_scripted_mission_objective("wh_main_short_victory", "archaon_spawned", true);
 			cm:complete_scripted_mission_objective("wh_main_long_victory", "archaon_spawned", true);
-			cm:complete_scripted_mission_objective("wh_main_short_victory", "archaon_defeated", true);
-			cm:complete_scripted_mission_objective("wh_main_long_victory", "archaon_defeated", true);
 		end
 	else
 		out.chaos("Disabling Chaos Invasion! (Human Chaos)");
@@ -246,19 +242,11 @@ function CI_FactionTurnStart(context)
 				if CI_EVENTS[i].required_stage == CI_DATA.CI_INVASION_STAGE then
 					local turn_min = CI_EVENTS[i].first_turn;
 					local turn_max = CI_EVENTS[i].last_turn;
-
-					if CI_EVENTS[i].key == "END_GAME" then
-						CI_DATA.CI_EARLY_TURNS = CI_DATA.CI_EARLY_TURNS or 0; -- Savegame compatibility
-						turn_min = turn_min - CI_DATA.CI_EARLY_TURNS;
-						turn_max = turn_max - CI_DATA.CI_EARLY_TURNS;
-					end
-
 					local chance = ((turn_number - turn_min) / (turn_max - turn_min)) * 100;
 
 					out.chaos("Next Event: "..CI_EVENTS[i].key);
 					out.chaos("\tFirst Possible Turn: "..turn_min);
 					out.chaos("\tLast Possible Turn: "..turn_max);
-					out.chaos("\tTurns Early: "..CI_DATA.CI_EARLY_TURNS);
 					out.chaos("\tCurrent Chance: "..chance.."%");
 
 					if chance > 0 then
@@ -406,7 +394,6 @@ function CI_Event_4_Victory(event)
 	out.chaos("CI_Event_4_Victory()");
 	out.inc_tab("chaos");
 	CI_DATA.CI_INVASION_STAGE = 4;
-
 	local human_factions = cm:get_human_factions();
 	
 	for i = 1, #human_factions do
@@ -446,9 +433,6 @@ function CI_Event_4_Victory(event)
 	
 	cm:complete_scripted_mission_objective("wh_main_short_victory", "archaon_spawned", true);
 	cm:complete_scripted_mission_objective("wh_main_long_victory", "archaon_spawned", true);
-
-	cm:complete_scripted_mission_objective("wh_main_short_victory", "archaon_defeated", true);
-	cm:complete_scripted_mission_objective("wh_main_long_victory", "archaon_defeated", true);
 
 	CI_apply_chaos_corruption(event.chaos_effect);
 	CI_personality_swap(4);
@@ -512,10 +496,8 @@ function CI_spawn_chaos(num_armies)
 		local multiplier = CI_ARMY_SETTINGS[CI_DATA.CI_SETTING].multiplier;
 		local num_armies_mod = num_armies * multiplier;
 		num_armies_mod = math.ceil(num_armies_mod);
-		CI_DATA.CI_EXTRA_ARMIES = CI_DATA.CI_EXTRA_ARMIES or 0; -- Savegame compatibility
-		num_armies_mod = num_armies_mod + CI_DATA.CI_EXTRA_ARMIES;
 		out.inc_tab("chaos");
-		out.chaos("Army Count Modified: "..tostring(num_armies_mod).." (("..num_armies.." * "..multiplier..") + "..tostring(CI_DATA.CI_EXTRA_ARMIES)..")");
+		out.chaos("Army Count Modified: "..tostring(num_armies_mod).." ("..num_armies.." * "..multiplier..")");
 
 		for inv = 1, #CI_CHAOS_ARMY_SPAWNS.invasions do
 			local position_key = CI_CHAOS_ARMY_SPAWNS.invasions[inv].key;
